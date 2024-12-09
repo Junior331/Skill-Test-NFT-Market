@@ -7,6 +7,8 @@ import { BsSearch } from "react-icons/bs";
 import { CgMenuLeft, CgMenuRight } from "react-icons/cg";
 import { useRouter } from "next/router";
 
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+
 //INTERNAL IMPORT
 import Style from "./NavBar.module.css";
 import { Discover, HelpCenter, Notification, Profile, SideBar } from "./index";
@@ -15,7 +17,7 @@ import images from "../../img";
 
 //IMPORT FROM SMART CONTRACT
 import { NFTMarketplaceContext } from "../../Context/NFTMarketplaceContext";
-import { useContext } from "react";
+import { useContext, useRef } from "react";
 
 const NavBar = () => {
   //----USESTATE COMPONNTS
@@ -58,15 +60,22 @@ const NavBar = () => {
     }
   };
 
+  // const openProfile = () => {
+  //   if (!profile) {
+  //     setProfile(true);
+  //     setHelp(false);
+  //     setDiscover(false);
+  //     setNotification(false);
+  //   } else {
+  //     setProfile(false);
+  //   }
+  // };
+
   const openProfile = () => {
-    if (!profile) {
-      setProfile(true);
-      setHelp(false);
-      setDiscover(false);
-      setNotification(false);
-    } else {
-      setProfile(false);
-    }
+    setProfile(!profile);
+    setHelp(false);
+    setDiscover(false);
+    setNotification(false);
   };
 
   const openSideBar = () => {
@@ -77,8 +86,27 @@ const NavBar = () => {
     }
   };
 
+  const profileRef = useRef(null);
+
+  // Close profile if clicked outside of it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfile(false); // Close profile if clicked outside
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
   //SMART CONTRACT SECTION
-  const { currentAccount, connectWallet, openError } = useContext(NFTMarketplaceContext);
+  const { currentAccount, connectWallet, openError } = useContext(
+    NFTMarketplaceContext
+  );
 
   return (
     <div className={Style.navbar}>
@@ -132,30 +160,52 @@ const NavBar = () => {
             {notification && <Notification />}
           </div>
 
-          {/* CREATE BUTTON SECTION */}
-          <div className={Style.navbar_container_right_button}>
-            {currentAccount == "" ? <Button btnName="Connect" handleClick={() => connectWallet()}/> 
-            : (
-              <Button btnName="Create" handleClick={() => router.push("/uploadNFT")}/>
-            )}
-          </div>
+          <ConnectButton.Custom>
+            {({ account, chain, openConnectModal, mounted }) => {
+              const connected = mounted && account && chain;
 
-          {/* USER PROFILE */}
+              return (
+                <>
+                  {connected ? (
+                    <>
+                      {/* USER PROFILE */}
 
-          <div className={Style.navbar_container_right_profile_box}>
-            <div className={Style.navbar_container_right_profile}>
-              <Image
-                src={images.user1}
-                alt="Profile"
-                width={40}
-                height={40}
-                onClick={() => openProfile()}
-                className={Style.navbar_container_right_profile}
-              />
+                      <div className={Style.navbar_container_right_profile_box}>
+                        <div className={Style.navbar_container_right_profile} 
+                        ref={profileRef}>
+                          <Image
+                            src={images.user1}
+                            alt="Profile"
+                            width={40}
+                            height={40}
+                            onClick={() => openProfile()}
+                            className={Style.navbar_container_right_profile}
+                          />
 
-              {profile && <Profile currentAccount={currentAccount} />}
-            </div>
-          </div>
+                          {profile && (
+                            <Profile currentAccount={currentAccount} />
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div
+                      className={Style.MenuSetting}
+                      onClick={() =>
+                        connected
+                          ? setIsOpenSettings(!isOpenSettings)
+                          : openConnectModal()
+                      }
+                    >
+                      <>
+                        <span>Connect Wallet</span>
+                      </>
+                    </div>
+                  )}
+                </>
+              );
+            }}
+          </ConnectButton.Custom>
 
           {/* MENU BUTTON */}
 
@@ -171,11 +221,11 @@ const NavBar = () => {
       {/* SIDBAR CPMPONE/NT */}
       {openSideMenu && (
         <div className={Style.sideBar}>
-          <SideBar 
-           setOpenSideMenu={setOpenSideMenu} 
-           currentAccount={currentAccount}
-           connectWallet={connectWallet}
-           />
+          <SideBar
+            setOpenSideMenu={setOpenSideMenu}
+            currentAccount={currentAccount}
+            connectWallet={connectWallet}
+          />
         </div>
       )}
       {openError && <Error />}

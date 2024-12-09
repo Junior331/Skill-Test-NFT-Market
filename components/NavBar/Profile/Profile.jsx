@@ -2,14 +2,17 @@ import React from "react";
 import Image from "next/image";
 import { FaUserAlt, FaRegImage, FaUserEdit } from "react-icons/fa";
 import { MdHelpCenter } from "react-icons/md";
-import { TbDownloadOff, TbDownload } from "react-icons/tb";
+import { TbDownloadOff, TbDownload, TbLogout } from "react-icons/tb";
 import Link from "next/link";
+import { useDisconnect } from "wagmi";
 
 //INTERNAL IMPORT
 import Style from "./Profile.module.css";
 import images from "../../../img";
 
 const Profile = ({ currentAccount }) => {
+  const { disconnect } = useDisconnect();
+
   return (
     <div className={Style.profile}>
       <div className={Style.profile_account}>
@@ -61,6 +64,14 @@ const Profile = ({ currentAccount }) => {
             <p>
               <Link href={{ pathname: "/aboutus" }}>About Us</Link>
             </p>
+          </div>
+
+          <div
+            className={Style.profile_menu_one_item}
+            onClick={() => disconnect()}
+          >
+            <TbLogout />
+            <p>Disconect</p>
           </div>
         </div>
       </div>
